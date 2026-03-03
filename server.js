@@ -10,7 +10,7 @@ const moment = require("moment-timezone");
 const connectDB = require("./config/db");
 const apiRoutes = require("./routes/api");
 
-const { startAutoDeleteCron  } = require("./cron/autoDeleteCron");
+const { startAutoDeleteCron } = require("./cron/autoDeleteCron");
 const { scheduleFetchJob } = require("./cron/fetchCron");
 
 const Job = require("./models/Job");
@@ -19,28 +19,39 @@ const app = express();
 
 connectDB();
 
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN?.split(",") || ["http://localhost:5173"],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
+// serve generated txt files
 app.use("/uploads/generated", express.static(path.join(__dirname, "uploads/generated")));
 
 // API
 app.use("/api", apiRoutes);
 
-const FRONTEND_DIST = path.join(__dirname, "..", "frontend", "dist");
+const FRONTEND_DIST = path.join(__dirname,"frontend", "dist");
 const FRONTEND_INDEX = path.join(FRONTEND_DIST, "index.html");
 
 app.use(express.static(FRONTEND_DIST));
 
-app.get('*', (req, res) => {
-  res.sendFile(
-    path.join(__dirname, 'frontend', 'dist', 'index.html')
-  );
+app.get(/^(?!\/api\/).*/, (req, res) => {
+  res.sendFile(FRONTEND_INDEX, (err) => {
+    if (err) {
+      res.status(404).json({
+        message:
+          "Frontend build not found. Run: cd frontend && npm run build (must create /frontend/dist).",
+      });
+    }
+  });
 });
 
-
 const initCron = async () => {
-  startAutoDeleteCron ({
+  startAutoDeleteCron({
     timezone: process.env.APP_TIMEZONE || "Asia/Karachi",
     daysToKeep: process.env.FILE_RETENTION_DAYS || 7,
   });
