@@ -32,16 +32,12 @@ const FRONTEND_INDEX = path.join(FRONTEND_DIST, "index.html");
 
 app.use(express.static(FRONTEND_DIST));
 
-app.get("*", (req, res) => {
-  res.sendFile(FRONTEND_INDEX, (err) => {
-    if (err) {
-      res.status(404).json({
-        message:
-          "Frontend build not found. Build frontend first (vite build) and ensure /frontend/dist exists.",
-      });
-    }
-  });
+app.get('*', (req, res) => {
+  res.sendFile(
+    path.join(__dirname, 'frontend', 'dist', 'index.html')
+  );
 });
+
 
 const initCron = async () => {
   startAutoDeleteCron ({
